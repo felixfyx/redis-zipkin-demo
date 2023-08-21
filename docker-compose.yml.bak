@@ -1,8 +1,0 @@
-services: # The services available
-  publisher: # Service 1: Publisher
-    # Make docker build the image using dockerfile
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    ports: 
-      - 8080:8080

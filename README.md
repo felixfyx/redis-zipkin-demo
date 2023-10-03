@@ -28,8 +28,11 @@ To clean up everything, simply stop running the `subscriber` and `docker contain
 docker compose down -v
 ```
 
-### Notes:
-#### Running on MacOS
+## Known bugs
+### Unable to exit from subscriber
+You have to press `ctrl+c` on both the subscriber and the docker compose process.
+
+### Running on MacOS
 MacOS cannot connect to docker containers via its internal IP.
 
 At the moment, to get around this issue we have to connect to `127.0.0.1:8080` instead of the internal IP address.

@@ -46,12 +46,15 @@ var (
 	// owner represents the owner of the application. In this example it is
 	// stored as a simple string, but in real-world use this may be the
 	// response to an asynchronous request.
-	owner    = "unknown"
+
+	// Modified from original code, it used to be 'unknown' and then
+	// set to something else later to show who/what was using this
+	owner    = "redis_publisher"
 	ownerKey = attribute.Key("owner")
 )
 
-// Annotator is a SpanProcessor that adds attributes to all started spans.
 type Annotator struct {
+	// Annotator is a SpanProcessor that adds attributes to all started spans.
 	// AttrsFunc is called when a span is started. The attributes it returns
 	// are set on the Span being started.
 	AttrsFunc func() []attribute.KeyValue
@@ -152,11 +155,9 @@ func main() {
 		// Creating a new tracer for calculating how long it takes for this
 		// function to clear
 		tr := otel.GetTracerProvider().Tracer("publisher-post")
-		owner = "redis"
 		_, span := tr.Start(ctx, "post-log-event")
-		// HACK: Probably a hacky way of getting things done but at least
-		// it does get things done.
-		// This will end the span that is post-event from the publisher-post
+
+		// This will end the span that is post-log-event from the publisher-post
 		// tracer
 		defer span.End()
 

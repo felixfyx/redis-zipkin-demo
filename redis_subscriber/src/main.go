@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/otel"
@@ -150,28 +151,38 @@ func main() {
 
 	tr := otel.GetTracerProvider().Tracer("subscriber-receive")
 
-	for {
-		startTime := time.Now()
-		// Creating a new tracer for calculating how long it takes to receive
-		// one message between another
-		_, span := tr.Start(ctx, "received-log-event", trace.WithTimestamp(startTime))
+	// Get trace ID
+	traceID := trace.SpanFromContext(ctx).SpanContext().TraceID()
+	fmt.Println(traceID)
 
-		// This should be used in a channel as opposed to
-		// running on a main thread
-		msg, err := subscriber.ReceiveMessage(ctx)
-		if err != nil {
-			panic(err)
+	go func() {
+		for {
+			startTime := time.Now()
+			// Creating a new tracer for calculating how long it takes to receive
+			// one message between another
+			_, span := tr.Start(ctx, "received-log-event", trace.WithTimestamp(startTime))
+
+			// This should be used in a channel as opposed to
+			// running on a main thread
+			msg, err := subscriber.ReceiveMessage(ctx)
+			if err != nil {
+				panic(err)
+			}
+
+			if err := json.Unmarshal([]byte(msg.Payload), &logtext); err != nil {
+				panic(err)
+			}
+
+			// Printing coloured string
+			fmt.Println("Received message from " + color.YellowString(msg.Channel) + " channel.")
+			fmt.Printf("%+v\n", logtext)
+
+			// End the span
+			// HACK: MANUALLY SETTING SPAN TIME
+			span.End(trace.WithTimestamp(startTime.Add(time.Hour)))
 		}
+	}()
 
-		if err := json.Unmarshal([]byte(msg.Payload), &logtext); err != nil {
-			panic(err)
-		}
-
-		fmt.Println("Received message from " + msg.Channel + " channel.")
-		fmt.Printf("%+v\n", logtext)
-
-		// End the span
-		// HACK: MANUALLY SETTING SPAN TIME
-		span.End(trace.WithTimestamp(startTime.Add(time.Hour)))
-	}
+	// Await input to press "enter"
+	fmt.Scanln()
 }
